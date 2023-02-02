@@ -10,14 +10,14 @@ import (
 type todo struct {
 	ID        string `json:"id"`
 	Item      string `json:"item"`
-	Completed string `json:"completed"`
+	Completed bool   `json:"completed"`
 }
 
 var todos = []todo{
 
-	{ID: "1", Item: "Complete your Assignment", Completed: "false"},
-	{ID: "2", Item: "Finsish your Readings", Completed: "false"},
-	{ID: "3", Item: "Talk to your family ", Completed: "false"},
+	{ID: "1", Item: "Complete your Assignment", Completed: false},
+	{ID: "2", Item: "Finsish your Readings", Completed: false},
+	{ID: "3", Item: "Talk to your family ", Completed: false},
 }
 
 // this context has bunch of information about the  incoming http request
@@ -32,7 +32,7 @@ func PostTodo(context *gin.Context) {
 		return
 	}
 	todos = append(todos, newTodo)
-	context.IndentedJSON(http.StatusCreated, todos)
+	context.IndentedJSON(http.StatusCreated, newTodo)
 }
 
 func getTodo(context *gin.Context) {
@@ -46,6 +46,20 @@ func getTodo(context *gin.Context) {
 	}
 	context.IndentedJSON(http.StatusOK, todo)
 }
+
+func updatestatus(context *gin.Context) {
+	id := context.Param("id")
+	todo, err := getTodoByID(id)
+	if err != nil {
+
+		context.Copy().IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not Found"})
+		return
+	}
+
+	todo.Completed = !todo.Completed
+	context.IndentedJSON(http.StatusOK, todo)
+}
+
 func getTodoByID(id string) (*todo, error) {
 	for i, T := range todos {
 
@@ -59,9 +73,10 @@ func getTodoByID(id string) (*todo, error) {
 
 func main() {
 
-	server := gin.Default()
-	server.GET("/todos", getTodosData)
-	server.GET("/todos/:id", getTodosData)
-	server.POST("/todos", PostTodo)
-	server.Run("localhost:9090")
+	router := gin.Default()
+	router.GET("/todos", getTodosData)
+	router.GET("/todos/:id", getTodo)
+	router.PATCH("/todos/:id", updatestatus)
+	router.POST("/todos", PostTodo)
+	router.Run("localhost:9090")
 }
